@@ -10,79 +10,255 @@ def check_login():
 
 
 
-def login_page():
-
+def login_style():
 
     st.markdown(
     """
+
     <style>
 
+
+    /* Background */
+
     .stApp {
-        background:#f1f5f9;
+
+        background:#eef3f8;
+
     }
+
+
+
+    /* Login container */
 
 
     .login-box {
 
+
         background:white;
 
-        padding:40px;
 
-        border-radius:15px;
+        padding:45px;
+
+
+        border-radius:18px;
+
 
         box-shadow:
-        0 5px 20px rgba(0,0,0,.15);
 
-        max-width:450px;
+        0 8px 30px rgba(0,0,0,0.12);
+
+
+        max-width:480px;
+
 
         margin:auto;
+
+
+        border-top:
+
+        6px solid #005b96;
+
 
     }
 
 
+
+
+    /* Title */
+
+
+    .login-title {
+
+
+        color:#003366;
+
+
+        text-align:center;
+
+
+        font-size:34px;
+
+
+        font-weight:800;
+
+
+        margin-bottom:10px;
+
+
+    }
+
+
+
+
+    .login-subtitle {
+
+
+        color:#475569;
+
+
+        text-align:center;
+
+
+        font-size:15px;
+
+
+        line-height:1.5;
+
+
+    }
+
+
+
+
+
+    /* Streamlit labels */
+
+
+    label {
+
+
+        color:#334155 !important;
+
+
+        font-weight:600 !important;
+
+
+    }
+
+
+
+
+
+    /* Input boxes */
+
+
+    input {
+
+
+        background:white !important;
+
+
+        color:#111827 !important;
+
+
+        border:1px solid #cbd5e1 !important;
+
+
+        border-radius:8px !important;
+
+
+    }
+
+
+
+
+
+
+    /* Login button */
+
+
+    div.stButton > button {
+
+
+        width:100%;
+
+
+        height:45px;
+
+
+        background:#005b96;
+
+
+        color:white;
+
+
+        border-radius:8px;
+
+
+        border:none;
+
+
+        font-weight:bold;
+
+
+        font-size:16px;
+
+
+    }
+
+
+
+
+    div.stButton > button:hover {
+
+
+        background:#003366;
+
+
+        color:white;
+
+
+    }
+
+
+
+
+
     </style>
+
+
     """,
+
     unsafe_allow_html=True
+
     )
 
 
 
     st.markdown(
-    """
 
-    <div class="login-box">
+"""
 
-    <h1 style="text-align:center;color:#003366">
-
-    🏥 BILIK GERAKAN
-
-    </h1>
+<div class="login-box">
 
 
-    <p style="text-align:center">
+<div class="login-title">
 
-    Epidemiological Surveillance System
+🏥 BILIK GERAKAN
 
-    </p>
-
-
-    </div>
-
-    """,
-    unsafe_allow_html=True
-    )
+</div>
 
 
-    username = st.text_input(
-        "Username"
-    )
+
+<div class="login-subtitle">
+
+<b>
+Epidemiological Surveillance System
+</b>
+
+<br>
+
+Government Monitoring Portal
+
+<br><br>
+
+<span style="color:#00a651">
+
+🟢 System Online
+
+</span>
 
 
-    password = st.text_input(
-        "Password",
-        type="password"
-    )
+</div>
 
+
+</div>
+
+""",
+
+unsafe_allow_html=True
+
+)
 
     if st.button("LOGIN"):
 
