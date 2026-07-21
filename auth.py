@@ -1,24 +1,32 @@
+# ==========================================================
+# BILIK GERAKAN
+# Authentication Module
+# Government Surveillance System
+# ==========================================================
+
+
 import streamlit as st
 
 
-def check_login():
 
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
-
-    return st.session_state.authenticated
-
+# ==========================================================
+# LOGIN PAGE STYLE
+# ==========================================================
 
 
 def login_style():
 
     st.markdown(
+
     """
 
     <style>
 
 
-    /* Background */
+    /* ==============================
+       PAGE BACKGROUND
+    ===============================*/
+
 
     .stApp {
 
@@ -28,7 +36,24 @@ def login_style():
 
 
 
-    /* Login container */
+
+    /* ==============================
+       REMOVE TOP SPACE
+    ===============================*/
+
+
+    .block-container {
+
+        padding-top:3rem;
+
+    }
+
+
+
+
+    /* ==============================
+       LOGIN CARD
+    ===============================*/
 
 
     .login-box {
@@ -45,13 +70,8 @@ def login_style():
 
         box-shadow:
 
-        0 8px 30px rgba(0,0,0,0.12);
+        0px 10px 35px rgba(0,0,0,0.12);
 
-
-        max-width:480px;
-
-
-        margin:auto;
 
 
         border-top:
@@ -59,21 +79,25 @@ def login_style():
         6px solid #005b96;
 
 
+
+        text-align:center;
+
+
     }
 
 
 
 
-    /* Title */
+
+    /* ==============================
+       TITLE
+    ===============================*/
 
 
     .login-title {
 
 
         color:#003366;
-
-
-        text-align:center;
 
 
         font-size:34px;
@@ -90,19 +114,17 @@ def login_style():
 
 
 
+
     .login-subtitle {
 
 
         color:#475569;
 
 
-        text-align:center;
-
-
         font-size:15px;
 
 
-        line-height:1.5;
+        line-height:1.6;
 
 
     }
@@ -111,7 +133,24 @@ def login_style():
 
 
 
-    /* Streamlit labels */
+    .online-status {
+
+
+        color:#00a651;
+
+
+        font-weight:bold;
+
+
+    }
+
+
+
+
+
+    /* ==============================
+       INPUT LABEL
+    ===============================*/
 
 
     label {
@@ -129,7 +168,9 @@ def login_style():
 
 
 
-    /* Input boxes */
+    /* ==============================
+       INPUT BOX
+    ===============================*/
 
 
     input {
@@ -141,7 +182,10 @@ def login_style():
         color:#111827 !important;
 
 
-        border:1px solid #cbd5e1 !important;
+        border:
+
+        1px solid #cbd5e1 !important;
+
 
 
         border-radius:8px !important;
@@ -153,8 +197,23 @@ def login_style():
 
 
 
+    input:focus {
 
-    /* Login button */
+
+        border:
+
+        2px solid #005b96 !important;
+
+
+    }
+
+
+
+
+
+    /* ==============================
+       LOGIN BUTTON
+    ===============================*/
 
 
     div.stButton > button {
@@ -178,13 +237,14 @@ def login_style():
         border:none;
 
 
-        font-weight:bold;
-
-
         font-size:16px;
 
 
+        font-weight:bold;
+
+
     }
+
 
 
 
@@ -204,6 +264,20 @@ def login_style():
 
 
 
+    /* ==============================
+       ALERT
+    ===============================*/
+
+
+    .stAlert {
+
+
+        border-radius:10px;
+
+    }
+
+
+
     </style>
 
 
@@ -215,119 +289,327 @@ def login_style():
 
 
 
-    st.markdown(
-
-"""
-
-<div class="login-box">
 
 
-<div class="login-title">
-
-🏥 BILIK GERAKAN
-
-</div>
+# ==========================================================
+# CHECK LOGIN STATUS
+# ==========================================================
 
 
-
-<div class="login-subtitle">
-
-<b>
-Epidemiological Surveillance System
-</b>
-
-<br>
-
-Government Monitoring Portal
-
-<br><br>
-
-<span style="color:#00a651">
-
-🟢 System Online
-
-</span>
+def check_login():
 
 
-</div>
+    if "authenticated" not in st.session_state:
 
 
-</div>
-
-""",
-
-unsafe_allow_html=True
-
-)
-
-    if st.button("LOGIN"):
+        st.session_state.authenticated=False
 
 
-        users = st.secrets["users"]
+
+    return st.session_state.authenticated
 
 
-        if username in users:
 
 
-            if password == users[username]:
+
+# ==========================================================
+# LOGIN PAGE
+# ==========================================================
 
 
-                st.session_state.authenticated=True
-
-                st.session_state.username=username
+def login_page():
 
 
-                st.session_state.role=(
-
-                    st.secrets["roles"]
-
-                    .get(
-
-                    username,
-
-                    "Viewer"
-
-                    )
-
-                )
+    login_style()
 
 
-                st.success(
-                    "Login berjaya"
-                )
+
+    left,center,right = st.columns(
+
+        [1,2,1]
+
+    )
 
 
-                st.rerun()
+
+    with center:
 
 
-            else:
 
-                st.error(
-                    "Password salah"
-                )
+        st.markdown(
+
+        """
+
+        <div class="login-box">
 
 
-        else:
+        <div class="login-title">
 
-            st.error(
-                "User tidak wujud"
+        🏥 BILIK GERAKAN
+
+        </div>
+
+
+
+        <div class="login-subtitle">
+
+
+        <b>
+
+        Epidemiological Surveillance System
+
+        </b>
+
+
+        <br>
+
+
+        Government Monitoring Portal
+
+
+        <br><br>
+
+
+        <span class="online-status">
+
+        🟢 System Online
+
+        </span>
+
+
+        </div>
+
+
+        </div>
+
+
+        """,
+
+        unsafe_allow_html=True
+
+        )
+
+
+
+        st.write("")
+
+
+
+        username = st.text_input(
+
+            "Username",
+
+            placeholder="Masukkan username"
+
+        )
+
+
+
+        password = st.text_input(
+
+            "Password",
+
+            type="password",
+
+            placeholder="Masukkan password"
+
+        )
+
+
+
+        st.write("")
+
+
+
+        login = st.button(
+
+            "LOGIN"
+
+        )
+
+
+
+
+        if login:
+
+
+            authenticate_user(
+
+                username,
+
+                password
+
             )
 
 
 
 
 
+# ==========================================================
+# USER AUTHENTICATION
+# ==========================================================
+
+
+def authenticate_user(
+
+    username,
+
+    password
+
+):
+
+
+
+    try:
+
+
+        users = st.secrets["users"]
+
+
+    except:
+
+
+        st.error(
+
+            "User database tidak dijumpai. Sila semak secrets.toml"
+
+        )
+
+        return
+
+
+
+
+
+    if username in users:
+
+
+
+        correct_password = users[username]
+
+
+
+        if password == correct_password:
+
+
+
+
+            st.session_state.authenticated=True
+
+
+
+            st.session_state.username=username
+
+
+
+
+
+            try:
+
+
+                role = st.secrets["roles"][username]
+
+
+            except:
+
+
+                role="Viewer"
+
+
+
+
+
+            st.session_state.role=role
+
+
+
+
+            st.success(
+
+                "Login berjaya"
+
+            )
+
+
+
+            st.rerun()
+
+
+
+        else:
+
+
+
+            st.error(
+
+                "❌ Password salah"
+
+            )
+
+
+
+
+    else:
+
+
+
+        st.error(
+
+            "❌ Username tidak wujud"
+
+        )
+
+
+
+
+
+# ==========================================================
+# LOGOUT
+# ==========================================================
+
+
 def logout():
 
 
-    if st.button("🚪 Logout"):
+    st.sidebar.markdown(
+
+    "---"
+
+    )
+
+
+
+    st.sidebar.write(
+
+        f"👤 {st.session_state.username}"
+
+    )
+
+
+    st.sidebar.write(
+
+        f"Role: {st.session_state.role}"
+
+    )
+
+
+
+    if st.sidebar.button(
+
+        "🚪 Logout"
+
+    ):
+
 
 
         st.session_state.authenticated=False
 
+
         st.session_state.username=None
 
+
         st.session_state.role=None
+
 
 
         st.rerun()
