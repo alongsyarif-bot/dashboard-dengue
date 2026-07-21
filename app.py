@@ -1154,3 +1154,671 @@ with c2:
 # ==========================================================
 # END PART 2
 # ==========================================================
+
+# ==========================================================
+# PART 3
+# MAP + LOCATION ANALYSIS
+# ==========================================================
+
+
+import folium
+
+from folium.plugins import HeatMap
+
+from streamlit_folium import st_folium
+
+from geopy.geocoders import Nominatim
+
+from geopy.extra.rate_limiter import RateLimiter
+
+
+
+# ==========================================================
+# GEOCODING FUNCTION
+# ==========================================================
+
+
+@st.cache_data
+def generate_coordinates(df):
+
+
+    # Already have GPS
+
+    if (
+
+        lat_col in df.columns
+
+        and
+
+        lon_col in df.columns
+
+    ):
+
+
+        df["Latitude"]=pd.to_numeric(
+
+            df[lat_col],
+
+            errors="coerce"
+
+        )
+
+
+        df["Longitude"]=pd.to_numeric(
+
+            df[lon_col],
+
+            errors="coerce"
+
+        )
+
+
+        return df
+
+
+
+
+    # If only address exists
+
+
+    if address_col is None:
+
+
+        return df
+
+
+
+
+    geolocator=Nominatim(
+
+        user_agent=
+        "bilik_gerakan_dashboard"
+
+    )
+
+
+
+    geocode=RateLimiter(
+
+        geolocator.geocode,
+
+        min_delay_seconds=1
+
+    )
+
+
+
+    lat=[]
+
+    lon=[]
+
+
+
+    progress=st.progress(0)
+
+
+
+    total=len(df)
+
+
+
+    for i,address in enumerate(
+
+        df[address_col]
+
+    ):
+
+
+        try:
+
+
+            location=geocode(
+
+                str(address)+", Malaysia"
+
+            )
+
+
+
+            if location:
+
+
+                lat.append(
+
+                    location.latitude
+
+                )
+
+
+                lon.append(
+
+                    location.longitude
+
+                )
+
+
+            else:
+
+                lat.append(None)
+
+                lon.append(None)
+
+
+
+        except:
+
+
+            lat.append(None)
+
+            lon.append(None)
+
+
+
+        progress.progress(
+
+            (i+1)/total
+
+        )
+
+
+
+
+    df["Latitude"]=lat
+
+    df["Longitude"]=lon
+
+
+
+    return df
+
+
+
+
+# ==========================================================
+# RUN LOCATION PROCESSING
+# ==========================================================
+
+
+
+with st.spinner(
+
+"📍 Memproses lokasi kes..."
+
+):
+
+
+    map_df=generate_coordinates(
+
+        data.copy()
+
+    )
+
+
+
+
+map_df["Latitude"]=pd.to_numeric(
+
+    map_df["Latitude"],
+
+    errors="coerce"
+
+)
+
+
+
+map_df["Longitude"]=pd.to_numeric(
+
+    map_df["Longitude"],
+
+    errors="coerce"
+
+)
+
+
+
+map_df=map_df.dropna(
+
+    subset=[
+
+        "Latitude",
+
+        "Longitude"
+
+    ]
+
+)
+
+
+
+# ==========================================================
+# MAP HEADER
+# ==========================================================
+
+
+
+st.markdown(
+
+"""
+
+<div class="section-card">
+
+
+<h2>
+
+🇲🇾 Peta Taburan Kes Malaysia
+
+</h2>
+
+
+</div>
+
+""",
+
+unsafe_allow_html=True
+
+)
+
+
+
+
+# ==========================================================
+# CREATE MAP
+# ==========================================================
+
+
+
+m=folium.Map(
+
+    location=[
+
+        4.2105,
+
+        101.9758
+
+    ],
+
+    zoom_start=6
+
+)
+
+
+
+
+# Diagnosis colour
+
+
+colour_list=[
+
+"red",
+
+"blue",
+
+"green",
+
+"orange",
+
+"purple",
+
+"darkred",
+
+"cadetblue"
+
+]
+
+
+
+diagnosis_colour={}
+
+
+
+if diag_col:
+
+
+    diagnosis_values=data[diag_col].unique()
+
+
+
+    for i,d in enumerate(
+
+        diagnosis_values
+
+    ):
+
+        diagnosis_colour[d]=colour_list[
+
+            i %
+
+            len(colour_list)
+
+        ]
+
+
+
+
+
+heat_data=[]
+
+
+
+for _,row in map_df.iterrows():
+
+
+
+    diagnosis=row[diag_col] if diag_col else "Unknown"
+
+
+
+    colour=diagnosis_colour.get(
+
+        diagnosis,
+
+        "red"
+
+    )
+
+
+
+    # count cases same location
+
+
+    case_count=len(
+
+        map_df[
+
+            map_df["Latitude"]
+
+            ==
+
+            row["Latitude"]
+
+        ]
+
+    )
+
+
+
+    radius=max(
+
+        5,
+
+        case_count*3
+
+    )
+
+
+
+
+    folium.CircleMarker(
+
+
+        location=[
+
+            row["Latitude"],
+
+            row["Longitude"]
+
+        ],
+
+
+        radius=radius,
+
+
+        color=colour,
+
+
+        fill=True,
+
+
+        fill_opacity=0.7,
+
+
+        popup=f"""
+
+
+        <b>BILIK GERAKAN</b>
+
+        <br><br>
+
+        Diagnosis:
+
+        {diagnosis}
+
+
+        <br>
+
+        Lokasi:
+
+        {row[address_col] if address_col else ''}
+
+
+        """
+
+
+
+    ).add_to(m)
+
+
+
+    heat_data.append(
+
+        [
+
+            row["Latitude"],
+
+            row["Longitude"],
+
+            1
+
+        ]
+
+    )
+
+
+
+
+
+# Heatmap layer
+
+
+if heat_data:
+
+
+    HeatMap(
+
+        heat_data,
+
+        radius=25
+
+    ).add_to(m)
+
+
+
+
+# Display map
+
+
+st_folium(
+
+    m,
+
+    width=1200,
+
+    height=650
+
+)
+
+
+
+# ==========================================================
+# LATEST 5 CASES
+# ==========================================================
+
+
+
+st.markdown(
+
+"""
+
+<div class="section-card">
+
+
+<h2>
+
+📝 5 Pendaftaran Terkini
+
+</h2>
+
+
+</div>
+
+""",
+
+unsafe_allow_html=True
+
+)
+
+
+
+latest_columns=[]
+
+
+
+for col in [
+
+"Tarikh Diagnosis",
+
+"Epid Minggu (Tkh Input Notifikasi)",
+
+"Diagnosis",
+
+"Sub Diagnosis",
+
+"Status Pesakit",
+
+"Alamat semasa/kejadian"
+
+]:
+
+
+    if col in data.columns:
+
+        latest_columns.append(col)
+
+
+
+
+if latest_columns:
+
+
+    st.dataframe(
+
+        data[latest_columns]
+
+        .tail(5)
+
+        .reset_index(drop=True),
+
+        use_container_width=True
+
+    )
+
+
+
+# ==========================================================
+# MASTER LIST PROTECTION
+# ==========================================================
+
+
+
+st.markdown(
+
+"""
+
+<div class="section-card">
+
+
+<h2>
+
+🔒 Data Induk Pesakit
+
+</h2>
+
+
+</div>
+
+""",
+
+unsafe_allow_html=True
+
+)
+
+
+
+st.info(
+
+"""
+
+Maklumat individu seperti Nama Pesakit dan No Pengenalan
+
+tidak dipaparkan dalam dashboard awam.
+
+Sila akses pangkalan data asal melalui sistem yang diluluskan.
+
+"""
+
+)
+
+
+
+# Optional download for authorized user
+
+
+safe_df=data.copy()
+
+
+
+for sensitive in [
+
+"Nama Pesakit",
+
+"No Pengenalan/No Dokumen Perjalanan Pesakit"
+
+]:
+
+
+    if sensitive in safe_df.columns:
+
+
+        safe_df=safe_df.drop(
+
+            columns=sensitive
+
+        )
+
+
+
+csv=safe_df.to_csv(
+
+    index=False
+
+).encode("utf-8")
+
+
+
+st.download_button(
+
+    "⬇️ Export Ringkasan Data",
+
+    csv,
+
+    "bilik_gerakan_summary.csv",
+
+    "text/csv"
+
+)
+
+
+
+# ==========================================================
+# END APPLICATION
+# ==========================================================
