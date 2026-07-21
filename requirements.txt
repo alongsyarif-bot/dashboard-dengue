@@ -1,7 +1,190 @@
-streamlit
-pandas
-numpy
-plotly
-folium
-streamlit-folium
-geopy
+# ==========================================================
+# BILIK GERAKAN — Design System
+# One place for colors, spacing, and chart styling so every
+# page/chart looks like it belongs to the same report.
+# ==========================================================
+
+import streamlit as st
+
+COLORS = {
+    "bg": "#f3f2f1",
+    "card": "#ffffff",
+    "border": "#e1e1e1",
+    "text": "#201f1e",
+    "text_muted": "#605e5c",
+    "navy": "#003366",
+    "blue": "#005b96",
+    "success": "#107c10",
+    "warning": "#d83b01",
+    "danger": "#d13438",
+}
+
+# Consistent categorical palette reused across every chart
+CHART_PALETTE = [
+    "#005b96", "#00a651", "#d83b01", "#8764b8",
+    "#c8203f", "#f2c811", "#0078d4", "#605e5c",
+]
+
+FONT = "'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+
+
+def inject_global_css():
+    st.markdown(
+        f"""
+        <style>
+        :root {{
+            --bg: {COLORS['bg']};
+            --card-bg: {COLORS['card']};
+            --border: {COLORS['border']};
+        }}
+
+        html, body, [class*="css"] {{ font-family: {FONT}; }}
+
+        .stApp {{ background: {COLORS['bg']}; }}
+
+        .block-container {{
+            padding-top: 1.2rem;
+            padding-left: 2.5rem;
+            padding-right: 2.5rem;
+            padding-bottom: 2rem;
+            max-width: 1500px;
+        }}
+
+        /* ---------- TOP HEADER ---------- */
+        .gov-header {{
+            background: {COLORS['navy']};
+            padding: 22px 28px;
+            border-radius: 8px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }}
+        .gov-header h1 {{ font-size: 22px; margin: 0; font-weight: 700; letter-spacing: 0.2px; }}
+        .gov-header .subtitle {{ font-size: 13px; color: #cfe0f0; margin-top: 2px; }}
+        .gov-header .meta {{ text-align: right; font-size: 13px; line-height: 1.7; }}
+        .live-dot {{
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+            background: #00e676; margin-right: 6px;
+            box-shadow: 0 0 0 3px rgba(0,230,118,0.25);
+        }}
+
+        /* ---------- KPI CARDS ---------- */
+        .kpi-card {{
+            background: {COLORS['card']};
+            border: 1px solid {COLORS['border']};
+            border-left: 4px solid {COLORS['blue']};
+            border-radius: 6px;
+            padding: 16px 18px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            height: 100%;
+        }}
+        .kpi-title {{
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: {COLORS['text_muted']};
+            font-weight: 600;
+            margin-bottom: 6px;
+        }}
+        .kpi-value {{
+            font-size: 26px;
+            font-weight: 700;
+            color: {COLORS['navy']};
+            line-height: 1.15;
+        }}
+        .kpi-sub {{ font-size: 12px; color: {COLORS['text_muted']}; margin-top: 4px; }}
+
+        /* ---------- SECTION / PANEL ---------- */
+        .panel {{
+            background: {COLORS['card']};
+            border: 1px solid {COLORS['border']};
+            border-radius: 6px;
+            padding: 18px 20px;
+            margin-top: 18px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }}
+        .panel-header {{
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }}
+        .panel-title {{ font-size: 16px; font-weight: 700; color: {COLORS['text']}; margin: 0; }}
+        .panel-desc {{ font-size: 12.5px; color: {COLORS['text_muted']}; }}
+
+        /* ---------- SIDEBAR ---------- */
+        section[data-testid="stSidebar"] {{
+            background: #ffffff;
+            border-right: 1px solid {COLORS['border']};
+        }}
+        section[data-testid="stSidebar"] .stMultiSelect label,
+        section[data-testid="stSidebar"] h1 {{
+            color: {COLORS['navy']} !important;
+        }}
+
+        /* ---------- BUTTONS ---------- */
+        div.stButton > button {{
+            border-radius: 4px;
+            font-weight: 600;
+        }}
+        div.stButton > button:first-child {{
+            background: {COLORS['blue']};
+            color: white;
+            border: none;
+        }}
+        div.stButton > button:first-child:hover {{ background: {COLORS['navy']}; }}
+
+        /* ---------- MISC ---------- */
+        .stAlert {{ border-radius: 6px; }}
+        div[data-testid="stDataFrame"] {{ border: 1px solid {COLORS['border']}; border-radius: 6px; }}
+        hr {{ border-color: {COLORS['border']}; }}
+        .footer {{ text-align:center; color:{COLORS['text_muted']}; font-size:12.5px; padding-top: 6px; }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def kpi_card(title: str, value, sub: str = ""):
+    sub_html = f'<div class="kpi-sub">{sub}</div>' if sub else ""
+    return f"""
+    <div class="kpi-card">
+        <div class="kpi-title">{title}</div>
+        <div class="kpi-value">{value}</div>
+        {sub_html}
+    </div>
+    """
+
+
+def panel_header(title: str, desc: str = ""):
+    desc_html = f'<span class="panel-desc">{desc}</span>' if desc else ""
+    st.markdown(
+        f"""
+        <div class="panel-header">
+            <p class="panel-title">{title}</p>
+            {desc_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def apply_chart_theme(fig, height=380):
+    """Apply one consistent look to every Plotly figure in the app."""
+    fig.update_layout(
+        template="plotly_white",
+        font=dict(family=FONT, size=12.5, color=COLORS["text"]),
+        colorway=CHART_PALETTE,
+        height=height,
+        margin=dict(l=10, r=10, t=30, b=10),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+    )
+    fig.update_xaxes(gridcolor="#eef0f2", zeroline=False)
+    fig.update_yaxes(gridcolor="#eef0f2", zeroline=False)
+    return fig
