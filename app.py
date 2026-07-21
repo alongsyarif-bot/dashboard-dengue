@@ -646,3 +646,511 @@ if selected_gender:
 
 
 data=filtered
+# ==========================================================
+# KPI SECTION
+# ==========================================================
+
+
+st.markdown(
+"""
+<div class="section-card">
+
+<h2>
+📊 Ringkasan Kes
+</h2>
+
+</div>
+""",
+unsafe_allow_html=True
+)
+
+
+st.write("")
+
+
+
+# KPI CALCULATIONS
+
+
+total_cases=len(data)
+
+
+
+# Highest Diagnosis
+
+if diag_col and len(data)>0:
+
+
+    top_diag=data[diag_col].value_counts().idxmax()
+
+
+else:
+
+    top_diag="Tiada Data"
+
+
+
+# Location affected
+
+if address_col:
+
+
+    affected_location=data[address_col].nunique()
+
+
+else:
+
+    affected_location=0
+
+
+
+update_time=datetime.now().strftime(
+"%d-%m-%Y %H:%M:%S"
+)
+
+
+
+# ==========================================================
+# KPI CARDS
+# ==========================================================
+
+
+k1,k2,k3,k4=st.columns(4)
+
+
+
+with k1:
+
+
+    st.markdown(
+
+    f"""
+
+    <div class="kpi-card">
+
+    <div class="kpi-title">
+    Jumlah Kes
+    </div>
+
+
+    <div class="kpi-value">
+    {total_cases:,}
+    </div>
+
+
+    </div>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+with k2:
+
+
+    st.markdown(
+
+    f"""
+
+    <div class="kpi-card">
+
+
+    <div class="kpi-title">
+
+    Diagnosis Tertinggi
+
+    </div>
+
+
+    <div class="kpi-value">
+
+    {top_diag}
+
+    </div>
+
+
+    </div>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+
+with k3:
+
+
+    st.markdown(
+
+    f"""
+
+    <div class="kpi-card">
+
+
+    <div class="kpi-title">
+
+    Lokaliti Terjejas
+
+    </div>
+
+
+    <div class="kpi-value">
+
+    {affected_location}
+
+    </div>
+
+
+    </div>
+
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+
+with k4:
+
+
+    st.markdown(
+
+    f"""
+
+    <div class="kpi-card">
+
+
+    <div class="kpi-title">
+
+    Kemaskini Terakhir
+
+    </div>
+
+
+    <div class="kpi-value">
+
+    {update_time}
+
+    </div>
+
+
+    </div>
+
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+st.write("")
+
+
+
+# ==========================================================
+# IMPORT PLOTLY
+# ==========================================================
+
+
+import plotly.express as px
+
+
+
+# ==========================================================
+# DIAGNOSIS ANALYSIS
+# ==========================================================
+
+
+st.markdown(
+
+"""
+
+<div class="section-card">
+
+<h2>
+🦠 Analisis Diagnosis
+</h2>
+
+</div>
+
+""",
+
+unsafe_allow_html=True
+
+)
+
+
+
+if diag_col:
+
+
+    diag_count=(
+
+        data[diag_col]
+
+        .value_counts()
+
+        .reset_index()
+
+    )
+
+
+    diag_count.columns=[
+
+        "Diagnosis",
+
+        "Jumlah"
+
+    ]
+
+
+
+    fig_diag=px.bar(
+
+        diag_count,
+
+        x="Jumlah",
+
+        y="Diagnosis",
+
+        orientation="h",
+
+        text="Jumlah",
+
+        title="Taburan Diagnosis"
+
+    )
+
+
+    fig_diag.update_layout(
+
+        plot_bgcolor="white",
+
+        paper_bgcolor="white",
+
+        height=450
+
+    )
+
+
+
+    st.plotly_chart(
+
+        fig_diag,
+
+        use_container_width=True
+
+    )
+
+
+
+else:
+
+
+    st.warning(
+    "Lajur diagnosis tidak dijumpai"
+    )
+
+
+
+
+
+# ==========================================================
+# GENDER + AGE CHART
+# ==========================================================
+
+
+c1,c2=st.columns(2)
+
+
+
+# ------------------------------
+# GENDER DOUGHNUT
+# ------------------------------
+
+
+with c1:
+
+
+
+    st.markdown(
+
+    """
+
+    <div class="section-card">
+
+    <h3>
+    👥 Analisis Jantina
+    </h3>
+
+    </div>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    if "Jantina Standard" in data.columns:
+
+
+        gender_count=(
+
+            data["Jantina Standard"]
+
+            .value_counts()
+
+            .reset_index()
+
+        )
+
+
+        gender_count.columns=[
+
+            "Jantina",
+
+            "Jumlah"
+
+        ]
+
+
+
+        fig_gender=px.pie(
+
+            gender_count,
+
+            values="Jumlah",
+
+            names="Jantina",
+
+            hole=0.55
+
+        )
+
+
+        fig_gender.update_layout(
+
+            height=400
+
+        )
+
+
+        st.plotly_chart(
+
+            fig_gender,
+
+            use_container_width=True
+
+        )
+
+
+
+# ------------------------------
+# AGE GROUP
+# ------------------------------
+
+
+with c2:
+
+
+
+    st.markdown(
+
+    """
+
+    <div class="section-card">
+
+
+    <h3>
+
+    👶 Analisis Kumpulan Umur
+
+    </h3>
+
+
+    </div>
+
+    """,
+
+    unsafe_allow_html=True
+
+    )
+
+
+
+    if "Kumpulan Umur" in data.columns:
+
+
+        age_count=(
+
+            data["Kumpulan Umur"]
+
+            .value_counts()
+
+            .reset_index()
+
+        )
+
+
+
+        age_count.columns=[
+
+            "Kumpulan Umur",
+
+            "Jumlah"
+
+        ]
+
+
+
+        fig_age=px.bar(
+
+            age_count,
+
+            x="Kumpulan Umur",
+
+            y="Jumlah",
+
+            text="Jumlah",
+
+            title=""
+
+        )
+
+
+
+        fig_age.update_layout(
+
+            height=400,
+
+            plot_bgcolor="white"
+
+        )
+
+
+        st.plotly_chart(
+
+            fig_age,
+
+            use_container_width=True
+
+        )
+
+
+
+# ==========================================================
+# END PART 2
+# ==========================================================
