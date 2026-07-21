@@ -640,24 +640,6 @@ height=600
 
 
 
-# ==================================================
-# TABLE
-# ==================================================
-
-
-st.divider()
-
-
-st.subheader(
-"📋 Patient Database"
-)
 
 
 
-st.dataframe(
-
-data,
-
-use_container_width=True
-
-)
