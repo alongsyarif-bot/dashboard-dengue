@@ -7,12 +7,12 @@ from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 
 from geopy.geocoders import Nominatim
-import time
+from geopy.extra.rate_limiter import RateLimiter
 
 
-# =====================================
+# ==================================================
 # PAGE CONFIG
-# =====================================
+# ==================================================
 
 st.set_page_config(
     page_title="Bilik Gerakan Dashboard",
@@ -21,9 +21,9 @@ st.set_page_config(
 )
 
 
-# =====================================
-# TITLE
-# =====================================
+# ==================================================
+# HEADER
+# ==================================================
 
 st.title(
     "🏥 BILIK GERAKAN"
@@ -34,30 +34,44 @@ st.subheader(
 )
 
 
-# =====================================
-# LOAD DATA
-# =====================================
+
+# ==================================================
+# GOOGLE SHEET LOAD
+# ==================================================
+
+
+def convert_sheet_url(url):
+
+    import re
+
+    sheet_id=re.search(
+        r"/d/([a-zA-Z0-9-_]+)",
+        url
+    ).group(1)
+
+
+    return (
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv"
+    )
+
 
 
 @st.cache_data
 def load_data():
 
+    url=st.secrets[
+        "GOOGLE_SHEET_URL"
+    ]
 
-    url = st.secrets["GOOGLE_SHEET_URL"]
 
-
-    csv_url = (
+    csv_url=convert_sheet_url(
         url
-        .replace(
-            "/edit?usp=sharing",
-            ""
-        )
-        +
-        "/export?format=csv"
     )
 
 
-    df=pd.read_csv(csv_url)
+    df=pd.read_csv(
+        csv_url
+    )
 
 
     return df
@@ -68,13 +82,103 @@ df=load_data()
 
 
 
-df=df.fillna("Unknown")
+df=df.fillna(
+    "Unknown"
+)
 
 
 
-# =====================================
-# CLEAN
-# =====================================
+# ==================================================
+# ADDRESS GEOCODING
+# ==================================================
+
+
+@st.cache_data
+def geocode_addresses(df):
+
+
+    geolocator=Nominatim(
+        user_agent=
+        "bilik_gerakan_dashboard"
+    )
+
+
+    geocode=RateLimiter(
+        geolocator.geocode,
+        min_delay_seconds=1
+    )
+
+
+    lat=[]
+    lon=[]
+
+
+    for address in df[
+        "Alamat semasa/kejadian"
+    ]:
+
+
+        try:
+
+
+            location=geocode(
+                str(address)+", Malaysia"
+            )
+
+
+            if location:
+
+
+                lat.append(
+                    location.latitude
+                )
+
+
+                lon.append(
+                    location.longitude
+                )
+
+
+            else:
+
+                lat.append(None)
+                lon.append(None)
+
+
+
+        except:
+
+            lat.append(None)
+            lon.append(None)
+
+
+
+    df["Latitude"]=lat
+
+    df["Longitude"]=lon
+
+
+    return df
+
+
+
+if (
+"Latitude" not in df.columns
+or
+"Longitude" not in df.columns
+):
+
+    with st.spinner(
+        "📍 Converting addresses to GPS coordinates..."
+    ):
+
+        df=geocode_addresses(df)
+
+
+
+# ==================================================
+# DATA CLEANING
+# ==================================================
 
 
 df["Umur (Tahun)"]=pd.to_numeric(
@@ -84,9 +188,9 @@ df["Umur (Tahun)"]=pd.to_numeric(
 
 
 
-# =====================================
+# ==================================================
 # SIDEBAR FILTER
-# =====================================
+# ==================================================
 
 
 st.sidebar.header(
@@ -94,100 +198,107 @@ st.sidebar.header(
 )
 
 
-week_filter=st.sidebar.multiselect(
+
+week=st.sidebar.multiselect(
 
 "Epid Minggu",
 
-df["Epid Minggu (Tkh Input Notifikasi)"]
+df[
+"Epid Minggu (Tkh Input Notifikasi)"
+]
 .unique()
 
 )
 
 
 
-diagnosis_filter=st.sidebar.multiselect(
+diagnosis=st.sidebar.multiselect(
 
 "Diagnosis",
 
-df["Diagnosis"]
+df[
+"Diagnosis"
+]
 .unique()
 
 )
 
 
 
-gender_filter=st.sidebar.multiselect(
+gender=st.sidebar.multiselect(
 
 "Jantina",
 
-df["Jantina"]
+df[
+"Jantina"
+]
 .unique()
 
 )
 
 
 
-filtered=df.copy()
+data=df.copy()
 
 
 
-if week_filter:
+if week:
 
-    filtered=filtered[
-        filtered[
+    data=data[
+        data[
         "Epid Minggu (Tkh Input Notifikasi)"
-        ].isin(
-            week_filter
-        )
+        ]
+        .isin(week)
     ]
 
 
 
-if diagnosis_filter:
+if diagnosis:
 
-    filtered=filtered[
-        filtered["Diagnosis"]
-        .isin(
-            diagnosis_filter
-        )
+    data=data[
+        data["Diagnosis"]
+        .isin(diagnosis)
     ]
 
 
 
-if gender_filter:
+if gender:
 
-    filtered=filtered[
-        filtered["Jantina"]
-        .isin(
-            gender_filter
-        )
+    data=data[
+        data["Jantina"]
+        .isin(gender)
     ]
 
 
 
-# =====================================
+# ==================================================
 # KPI
-# =====================================
+# ==================================================
 
 
-col1,col2,col3,col4=st.columns(4)
+c1,c2,c3,c4=st.columns(4)
 
 
 
-with col1:
+with c1:
 
     st.metric(
         "Total Cases",
-        len(filtered)
+        len(data)
     )
 
 
-with col2:
 
-    death=filtered[
-    filtered["Status Pesakit"]
-    =="Meninggal"
+with c2:
+
+    death=data[
+        data[
+        "Status Pesakit"
+        ]
+        ==
+        "Meninggal"
     ]
+
 
     st.metric(
         "Death",
@@ -195,31 +306,43 @@ with col2:
     )
 
 
-with col3:
+
+with c3:
 
     st.metric(
+
         "Average Age",
+
         round(
-        filtered["Umur (Tahun)"]
-        .mean(),
-        1
+            data[
+            "Umur (Tahun)"
+            ]
+            .mean(),
+            1
         )
+
     )
 
 
-with col4:
+
+with c4:
 
     st.metric(
+
         "Diagnosis",
-        filtered["Diagnosis"]
+
+        data[
+        "Diagnosis"
+        ]
         .nunique()
+
     )
 
 
 
-# =====================================
-# CHART SECTION
-# =====================================
+# ==================================================
+# CHARTS
+# ==================================================
 
 
 st.divider()
@@ -232,25 +355,23 @@ col1,col2=st.columns(2)
 with col1:
 
 
-    week_chart=(
+    trend=data.groupby(
 
-    filtered
-    .groupby(
-    "Epid Minggu (Tkh Input Notifikasi)"
-    )
-    .size()
-    .reset_index(
-    name="Cases"
-    )
+        "Epid Minggu (Tkh Input Notifikasi)"
+
+    ).size().reset_index(
+
+        name="Cases"
 
     )
 
 
     fig=px.line(
 
-        week_chart,
+        trend,
 
-        x="Epid Minggu (Tkh Input Notifikasi)",
+        x=
+        "Epid Minggu (Tkh Input Notifikasi)",
 
         y="Cases",
 
@@ -268,23 +389,20 @@ with col1:
 
 
 
+
 with col2:
 
 
-    diag=(
-
-    filtered
-    ["Diagnosis"]
-    .value_counts()
-    .reset_index()
-
-    )
+    diag=data[
+        "Diagnosis"
+    ].value_counts().reset_index()
 
 
     diag.columns=[
-    "Diagnosis",
-    "Cases"
+        "Diagnosis",
+        "Cases"
     ]
+
 
 
     fig=px.bar(
@@ -295,7 +413,7 @@ with col2:
 
         y="Cases",
 
-        title="Diagnosis Distribution"
+        title="Diagnosis"
 
     )
 
@@ -307,15 +425,10 @@ with col2:
 
 
 
-# =====================================
+
+# ==================================================
 # DEMOGRAPHIC
-# =====================================
-
-
-st.subheader(
-"👥 Patient Demographic"
-)
-
+# ==================================================
 
 
 col1,col2=st.columns(2)
@@ -324,20 +437,24 @@ col1,col2=st.columns(2)
 
 with col1:
 
-    gender=filtered[
-    "Jantina"
+
+    gender_chart=data[
+        "Jantina"
     ].value_counts()
 
 
     fig=px.pie(
 
-        values=gender.values,
+        values=
+        gender_chart.values,
 
-        names=gender.index,
+        names=
+        gender_chart.index,
 
         title="Gender"
 
     )
+
 
     st.plotly_chart(fig)
 
@@ -345,16 +462,20 @@ with col1:
 
 with col2:
 
-    status=filtered[
-    "Status Pesakit"
+
+    status=data[
+        "Status Pesakit"
     ].value_counts()
+
 
 
     fig=px.pie(
 
-        values=status.values,
+        values=
+        status.values,
 
-        names=status.index,
+        names=
+        status.index,
 
         title="Patient Status"
 
@@ -365,25 +486,54 @@ with col2:
 
 
 
-# =====================================
+
+# ==================================================
 # MAP
-# =====================================
+# ==================================================
 
 
 st.divider()
 
 
 st.subheader(
-"🇲🇾 Outbreak Location Map"
+"🇲🇾 Outbreak Map"
 )
 
 
 
-map_df=filtered.dropna(
+map_data=data.copy()
+
+
+
+map_data["Latitude"]=pd.to_numeric(
+
+map_data["Latitude"],
+
+errors="coerce"
+
+)
+
+
+map_data["Longitude"]=pd.to_numeric(
+
+map_data["Longitude"],
+
+errors="coerce"
+
+)
+
+
+
+map_data=map_data.dropna(
+
 subset=[
+
 "Latitude",
+
 "Longitude"
+
 ]
+
 )
 
 
@@ -391,8 +541,11 @@ subset=[
 m=folium.Map(
 
 location=[
+
 4.21,
+
 101.97
+
 ],
 
 zoom_start=6
@@ -401,35 +554,40 @@ zoom_start=6
 
 
 
-# markers
+heat=[]
 
 
-for _,row in map_df.iterrows():
+
+for _,row in map_data.iterrows():
 
 
     folium.CircleMarker(
 
-        [
+        location=[
 
-        row["Latitude"],
+            row["Latitude"],
 
-        row["Longitude"]
+            row["Longitude"]
 
         ],
 
-        radius=5,
+        radius=6,
 
         popup=
 
         f"""
 
-        Name:
-        {row['Nama Pesakit']}
+        <b>{row['Nama Pesakit']}</b>
 
         <br>
 
         Diagnosis:
         {row['Diagnosis']}
+
+        <br>
+
+        Status:
+        {row['Status Pesakit']}
 
         """
 
@@ -437,26 +595,36 @@ for _,row in map_df.iterrows():
 
 
 
-# heatmap
+    heat.append(
+
+        [
+
+        row["Latitude"],
+
+        row["Longitude"],
+
+        1
+
+        ]
+
+    )
 
 
-heat_data=[
 
-[
-row["Latitude"],
-row["Longitude"],
-1
-
-]
-
-for _,row in map_df.iterrows()
-
-]
+if heat:
 
 
-HeatMap(
-heat_data
-).add_to(m)
+    HeatMap(
+        heat
+    ).add_to(m)
+
+
+
+else:
+
+    st.warning(
+        "No address can be mapped"
+    )
 
 
 
@@ -472,9 +640,9 @@ height=600
 
 
 
-# =====================================
-# PATIENT TABLE
-# =====================================
+# ==================================================
+# TABLE
+# ==================================================
 
 
 st.divider()
@@ -488,7 +656,7 @@ st.subheader(
 
 st.dataframe(
 
-filtered,
+data,
 
 use_container_width=True
 
